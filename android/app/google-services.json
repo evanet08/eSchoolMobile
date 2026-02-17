@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "618422117434",
+    "project_id": "monekole-bc4ee",
+    "storage_bucket": "monekole-bc4ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618422117434:android:3baf8603f53585eb8a8103",
+        "android_client_info": {
+          "package_name": "com.ictgroup.eschoolmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg2a2FBzOFktpEKkGTSivNBcU_ecwi-c0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618422117434:android:617483e25ad554748a8103",
+        "android_client_info": {
+          "package_name": "com.ictgroup.eschoolmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg2a2FBzOFktpEKkGTSivNBcU_ecwi-c0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
