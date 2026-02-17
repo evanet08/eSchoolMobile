@@ -1,15 +1,13 @@
-import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:eschoolmobile/l10n/app_localizations.dart';
-import 'package:eschoolmobile/providers/account_creation_provider.dart';
 import 'package:eschoolmobile/providers/authentication_provider.dart';
 import 'package:eschoolmobile/services/navigation_service.dart';
-import 'package:eschoolmobile/utils/theme/constantes/colors_constantes.dart';
-import 'package:provider/provider.dart';
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:eschoolmobile/utils/theme/constantes/other_constantes.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ActivityDashboardPage extends StatefulWidget {
   final String userType;
@@ -22,6 +20,20 @@ class ActivityDashboardPage extends StatefulWidget {
 class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
   List<dynamic> activities = [];
   bool isLoading = true;
+
+  // Minimal color scheme per user type
+  Color get _accent {
+    switch (widget.userType) {
+      case 'Teacher':
+        return const Color(0xFF6C63FF); // Soft indigo
+      case 'Parent':
+        return const Color(0xFF00B894); // Mint green
+      case 'Administrative':
+        return const Color(0xFFE17055); // Warm coral
+      default:
+        return const Color(0xFF6C63FF);
+    }
+  }
 
   @override
   void initState() {
@@ -60,7 +72,7 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
         });
       }
     } catch (e) {
-      print("Error fetching activities: $e");
+      debugPrint("Error fetching activities: $e");
       setState(() => isLoading = false);
     }
   }
@@ -73,189 +85,349 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
   }
 
   IconData _getIcon(dynamic item) {
-    // Mapping icons based on labels or codes for variety
     String label = _getLabel(item).toLowerCase();
-    
-    if (label.contains('présence')) return Icons.how_to_reg_rounded;
-    if (label.contains('note')) return Icons.grade_rounded;
-    if (label.contains('communication')) return Icons.chat_bubble_rounded;
-    if (label.contains('horaire') || label.contains('calendrier')) return Icons.calendar_month_rounded;
-    if (label.contains('devoir')) return Icons.assignment_rounded;
-    if (label.contains('examen')) return Icons.quiz_rounded;
-    if (label.contains('bulletin')) return Icons.description_rounded;
-    if (label.contains('discipline')) return Icons.gavel_rounded;
-    if (label.contains('paiement')) return Icons.payments_rounded;
-    if (label.contains('comptable')) return Icons.account_balance_wallet_rounded;
-    if (label.contains('directeur')) return Icons.manage_accounts_rounded;
-    if (label.contains('secrétaire')) return Icons.edit_note_rounded;
-    if (label.contains('menu') || label.contains('cantine')) return Icons.restaurant_rounded;
-    if (label.contains('transport')) return Icons.directions_bus_rounded;
-    
-    return Icons.grid_view_rounded;
+
+    if (label.contains('présence')) return Icons.how_to_reg_outlined;
+    if (label.contains('note')) return Icons.grade_outlined;
+    if (label.contains('communication')) return Icons.chat_bubble_outline;
+    if (label.contains('horaire') || label.contains('calendrier')) return Icons.calendar_month_outlined;
+    if (label.contains('devoir')) return Icons.assignment_outlined;
+    if (label.contains('examen')) return Icons.quiz_outlined;
+    if (label.contains('bulletin')) return Icons.description_outlined;
+    if (label.contains('discipline') || label.contains('conduite')) return Icons.gavel_outlined;
+    if (label.contains('paiement') || label.contains('payment')) return Icons.payments_outlined;
+    if (label.contains('comptable')) return Icons.account_balance_wallet_outlined;
+    if (label.contains('directeur')) return Icons.manage_accounts_outlined;
+    if (label.contains('superviseur') || label.contains('pédagogique')) return Icons.school_outlined;
+    if (label.contains('secrétaire')) return Icons.edit_note_outlined;
+    if (label.contains('préfet')) return Icons.admin_panel_settings_outlined;
+    if (label.contains('proviseur')) return Icons.business_outlined;
+    if (label.contains('intendant')) return Icons.inventory_outlined;
+    if (label.contains('bibliothécaire')) return Icons.local_library_outlined;
+    if (label.contains('animateur') || label.contains('culturel')) return Icons.palette_outlined;
+    if (label.contains('menu') || label.contains('cantine')) return Icons.restaurant_outlined;
+    if (label.contains('transport')) return Icons.directions_bus_outlined;
+    if (label.contains('messagerie') || label.contains('chat')) return Icons.forum_outlined;
+    if (label.contains('document')) return Icons.folder_outlined;
+    if (label.contains('historique')) return Icons.receipt_long_outlined;
+    if (label.contains('suivi')) return Icons.track_changes_outlined;
+    return Icons.grid_view_outlined;
+  }
+
+  String _getUserTypeLabel() {
+    switch (widget.userType) {
+      case 'Teacher':
+        return 'Enseignant';
+      case 'Parent':
+        return 'Parent';
+      case 'Administrative':
+        return 'Administratif';
+      default:
+        return '';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userColor = ColorConstantes.getColorForUserType(widget.userType);
     final user = AuthenticationProvider.instance.utilisateur;
+    final userName = "${user?.noms ?? 'Utilisateur'} ${user?.prenoms ?? ''}".trim();
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              ColorConstantes.primaryDark,
-              userColor.withValues(alpha: 0.8),
-              ColorConstantes.primaryColor,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(user, userColor),
-              Expanded(
-                child: _buildBody(userColor),
-              ),
-            ],
-          ),
+      backgroundColor: const Color(0xFF0F0F14),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // --- Top Bar ---
+            _buildTopBar(userName),
+            // --- Content ---
+            Expanded(
+              child: isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: _accent,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : _buildGrid(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(dynamic user, Color userColor) {
+  Widget _buildTopBar(String userName) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: const Icon(Icons.person, color: Colors.white, size: 35),
-          ).animate().scale(duration: 400.ms),
-          const SizedBox(width: 16),
+          // Avatar
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _accent.withValues(alpha: 0.15),
+              border: Border.all(color: _accent.withValues(alpha: 0.4), width: 1.5),
+            ),
+            child: Icon(Icons.person_outline, color: _accent, size: 22),
+          ),
+          const SizedBox(width: 14),
+          // Name & Type
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Bonjour,",
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                  userName,
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  "${user?.noms ?? 'Utilisateur'} ${user?.prenoms ?? ''}",
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  _getUserTypeLabel(),
+                  style: GoogleFonts.inter(
+                    color: _accent.withValues(alpha: 0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
-            ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white),
-            onPressed: () => NavigationService.instance.navigateToReplacement('user_selection'),
+          // Logout
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => NavigationService.instance.navigateToReplacement('user_selection'),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+                child: Icon(Icons.logout_rounded, color: Colors.white.withValues(alpha: 0.5), size: 20),
+              ),
+            ),
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
   }
 
-  Widget _buildBody(Color userColor) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          ),
-          child: isLoading 
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 30, 24, 16),
-                    child: Text(
-                      widget.userType == 'Parent' ? "Opérations disponibles" : "Mon Tableau de Bord",
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+  Widget _buildGrid() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Section title
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 16, top: 8),
+                child: Text(
+                  "Tableau de bord",
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
                   ),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.1,
-                      ),
-                      itemCount: activities.length,
-                      itemBuilder: (context, index) {
-                        return _buildActivityCard(activities[index], userColor, index);
+                ),
+              ).animate().fadeIn(delay: 200.ms),
+              // Grid
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.0,
+                  ),
+                  itemCount: activities.length,
+                  itemBuilder: (context, index) {
+                    return _HoverCard(
+                      label: _getLabel(activities[index]),
+                      icon: _getIcon(activities[index]),
+                      accent: _accent,
+                      index: index,
+                      onTap: () {
+                        // Handle navigation based on activity
                       },
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
+            ],
+          ),
         ),
-      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+      ),
+    );
+  }
+}
+
+// --- Hover Card Widget (StatefulWidget for hover state) ---
+class _HoverCard extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final Color accent;
+  final int index;
+  final VoidCallback onTap;
+
+  const _HoverCard({
+    required this.label,
+    required this.icon,
+    required this.accent,
+    required this.index,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverCard> createState() => _HoverCardState();
+}
+
+class _HoverCardState extends State<_HoverCard> with SingleTickerProviderStateMixin {
+  bool _isHovered = false;
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _elevationAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _elevationAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
   }
 
-  Widget _buildActivityCard(dynamic item, Color userColor, int index) {
-    return GestureDetector(
-      onTap: () {
-        // Handle navigation based on activity
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: userColor.withValues(alpha: 0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(_getIcon(item), color: Colors.white, size: 30),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                _getLabel(item),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onHover(bool hovering) {
+    setState(() => _isHovered = hovering);
+    if (hovering) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnim.value,
+          child: MouseRegion(
+            onEnter: (_) => _onHover(true),
+            onExit: (_) => _onHover(false),
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: widget.onTap,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Color.lerp(
+                    Colors.white.withValues(alpha: 0.04),
+                    widget.accent.withValues(alpha: 0.12),
+                    _elevationAnim.value,
+                  ),
+                  border: Border.all(
+                    color: Color.lerp(
+                      Colors.white.withValues(alpha: 0.08),
+                      widget.accent.withValues(alpha: 0.4),
+                      _elevationAnim.value,
+                    )!,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: widget.accent.withValues(alpha: 0.15 * _elevationAnim.value),
+                      blurRadius: 20 * _elevationAnim.value,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Icon
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Color.lerp(
+                          widget.accent.withValues(alpha: 0.1),
+                          widget.accent.withValues(alpha: 0.2),
+                          _elevationAnim.value,
+                        ),
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        color: Color.lerp(
+                          widget.accent.withValues(alpha: 0.7),
+                          widget.accent,
+                          _elevationAnim.value,
+                        ),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Label
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        widget.label,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          color: Color.lerp(
+                            Colors.white.withValues(alpha: 0.6),
+                            Colors.white.withValues(alpha: 0.95),
+                            _elevationAnim.value,
+                          ),
+                          fontSize: 11,
+                          fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: (400 + index * 50).ms).scale(begin: const Offset(0.9, 0.9));
+          ),
+        );
+      },
+    ).animate().fadeIn(
+      delay: (300 + widget.index * 60).ms,
+      duration: 400.ms,
+    ).slideY(
+      begin: 0.15,
+      delay: (300 + widget.index * 60).ms,
+      duration: 400.ms,
+      curve: Curves.easeOutCubic,
+    );
   }
 }
