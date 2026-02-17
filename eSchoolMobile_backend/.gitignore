@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Database
+db.sqlite3
+*.sqlite3
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Django
+staticfiles/
+media/uploads/
+
+# Migrations cache
+**/migrations/__pycache__/
+db.sqlite3
+venv/
+__pycache__/
+.DS_Store
+service-account.json
+.env.example
