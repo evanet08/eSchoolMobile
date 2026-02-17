@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get app_name => 'eSchoolMobile';
+  String get app_name => 'MonEcole';
 
   @override
   String get authentication_msg =>
@@ -342,7 +342,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Igihe cawe c\'ukwezi cararangiye. Nyabuna winjire ukundi';
 
   @override
-  String get welcome_title => 'Murakaza neza eSchoolMobile';
+  String get welcome_title => 'Murakaza neza MonEkole';
 
   @override
   String get welcome_subtitle => 'Gucunga ishure neza';

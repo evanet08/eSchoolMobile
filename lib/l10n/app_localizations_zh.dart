@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get app_name => 'eSchoolMobile';
+  String get app_name => 'MonEcole';
 
   @override
   String get authentication_msg =>
@@ -342,7 +342,7 @@ class AppLocalizationsZh extends AppLocalizations {
       'Session ya bino esili kokoma. Soki bolingi, banzela na bino';
 
   @override
-  String get welcome_title => 'Boyei malamu eSchoolMobile';
+  String get welcome_title => 'Boyei malamu MonEkole';
 
   @override
   String get welcome_subtitle => 'Kotambwisa kelasi malamu';

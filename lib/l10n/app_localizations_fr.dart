@@ -9,7 +9,7 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get app_name => 'eSchoolMobile';
+  String get app_name => 'MonEcole';
 
   @override
   String get authentication_msg =>
@@ -343,7 +343,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre session a expiré. Veuillez vous reconnecter';
 
   @override
-  String get welcome_title => 'Bienvenue à eSchoolMobile';
+  String get welcome_title => 'Bienvenue à MonEkole';
 
   @override
   String get welcome_subtitle => 'Gestion scolaire simplifiée';

@@ -9,7 +9,7 @@ class AppLocalizationsSw extends AppLocalizations {
   AppLocalizationsSw([String locale = 'sw']) : super(locale);
 
   @override
-  String get app_name => 'eSchoolMobile';
+  String get app_name => 'MonEcole';
 
   @override
   String get authentication_msg =>
@@ -343,7 +343,7 @@ class AppLocalizationsSw extends AppLocalizations {
       'Sehemu yako imeisha muda wake. Tafadhali ingia tena';
 
   @override
-  String get welcome_title => 'Karibu eSchoolMobile';
+  String get welcome_title => 'Karibu MonEkole';
 
   @override
   String get welcome_subtitle => 'Usimamizi wa shule ulio bora';

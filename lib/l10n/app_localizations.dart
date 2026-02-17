@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @app_name.
   ///
   /// In en, this message translates to:
-  /// **'eSchoolMobile'**
+  /// **'MonEcole'**
   String get app_name;
 
   /// No description provided for @authentication_msg.
@@ -749,7 +749,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcome_title.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to eSchoolMobile'**
+  /// **'Welcome to MonEkole'**
   String get welcome_title;
 
   /// No description provided for @welcome_subtitle.

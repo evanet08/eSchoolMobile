@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get app_name => 'eSchoolMobile';
+  String get app_name => 'MonEcole';
 
   @override
   String get authentication_msg =>
@@ -339,7 +339,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get session_expired => 'Your session has expired. Please log in again';
 
   @override
-  String get welcome_title => 'Welcome to eSchoolMobile';
+  String get welcome_title => 'Welcome to MonEkole';
 
   @override
   String get welcome_subtitle => 'Smart school management';
