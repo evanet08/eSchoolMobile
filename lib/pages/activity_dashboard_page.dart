@@ -148,7 +148,7 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
                 ),
                 Text(
-                  "${user?.firstName ?? 'Utilisateur'} ${user?.lastName ?? ''}",
+                  "${user?.noms ?? 'Utilisateur'} ${user?.prenoms ?? ''}",
                   style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ],
