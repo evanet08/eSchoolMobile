@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:eschoolmobile/providers/authentication_provider.dart';
 import 'package:eschoolmobile/services/navigation_service.dart';
+import 'package:eschoolmobile/pages/parent_enfants_page.dart';
 
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -158,21 +159,21 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
 
   Widget _buildTopBar(String userName) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
       child: Row(
         children: [
           // Avatar
           Container(
-            width: 42,
-            height: 42,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _accent.withValues(alpha: 0.15),
               border: Border.all(color: _accent.withValues(alpha: 0.4), width: 1.5),
             ),
-            child: Icon(Icons.person_outline, color: _accent, size: 22),
+            child: Icon(Icons.person_outline, color: _accent, size: 18),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           // Name & Type
           Expanded(
             child: Column(
@@ -182,16 +183,15 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
                   userName,
                   style: GoogleFonts.inter(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
                 Text(
                   _getUserTypeLabel(),
                   style: GoogleFonts.inter(
-                    color: _accent.withValues(alpha: 0.8),
-                    fontSize: 12,
+                    color: _accent.withValues(alpha: 0.7),
+                    fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -199,24 +199,40 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
             ),
           ),
           // Logout
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => NavigationService.instance.navigateToReplacement('user_selection'),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-                child: Icon(Icons.logout_rounded, color: Colors.white.withValues(alpha: 0.5), size: 20),
+          GestureDetector(
+            onTap: () => NavigationService.instance.navigateToReplacement('user_selection'),
+            child: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
+              child: Icon(Icons.logout_rounded, color: Colors.white.withValues(alpha: 0.5), size: 16),
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
+    ).animate().fadeIn(duration: 300.ms);
+  }
+
+  void _handleActivityTap(dynamic item) {
+    String label = _getLabel(item).toLowerCase();
+    if (widget.userType == 'Parent') {
+      if (label.contains('note') || label.contains('bulletin') || label.contains('suivi')) {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentEnfantsPage()));
+        return;
+      }
+      if (label.contains('enfant') || label.contains('élève')) {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentEnfantsPage()));
+        return;
+      }
+    }
+    if (widget.userType == 'Teacher') {
+      if (label.contains('note')) {
+        NavigationService.instance.navigateTo('annees');
+        return;
+      }
+    }
   }
 
   Widget _buildGrid() {
@@ -224,32 +240,32 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Section title
               Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 16, top: 8),
+                padding: const EdgeInsets.only(left: 2, bottom: 8, top: 4),
                 child: Text(
                   "Tableau de bord",
                   style: GoogleFonts.inter(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.35),
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
+                    letterSpacing: 1,
                   ),
                 ),
-              ).animate().fadeIn(delay: 200.ms),
+              ).animate().fadeIn(delay: 150.ms),
               // Grid
               Expanded(
                 child: GridView.builder(
-                  padding: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.only(bottom: 16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.0,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 1.05,
                   ),
                   itemCount: activities.length,
                   itemBuilder: (context, index) {
@@ -258,9 +274,7 @@ class _ActivityDashboardPageState extends State<ActivityDashboardPage> {
                       icon: _getIcon(activities[index]),
                       accent: _accent,
                       index: index,
-                      onTap: () {
-                        // Handle navigation based on activity
-                      },
+                      onTap: () => _handleActivityTap(activities[index]),
                     );
                   },
                 ),
@@ -343,8 +357,9 @@ class _HoverCardState extends State<_HoverCard> with SingleTickerProviderStateMi
             child: GestureDetector(
               onTap: widget.onTap,
               child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   color: Color.lerp(
                     Colors.white.withValues(alpha: 0.04),
                     widget.accent.withValues(alpha: 0.12),
@@ -352,18 +367,18 @@ class _HoverCardState extends State<_HoverCard> with SingleTickerProviderStateMi
                   ),
                   border: Border.all(
                     color: Color.lerp(
-                      Colors.white.withValues(alpha: 0.08),
-                      widget.accent.withValues(alpha: 0.4),
+                      Colors.white.withValues(alpha: 0.07),
+                      widget.accent.withValues(alpha: 0.35),
                       _elevationAnim.value,
                     )!,
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: widget.accent.withValues(alpha: 0.15 * _elevationAnim.value),
-                      blurRadius: 20 * _elevationAnim.value,
+                      color: widget.accent.withValues(alpha: 0.12 * _elevationAnim.value),
+                      blurRadius: 16 * _elevationAnim.value,
                       spreadRadius: 0,
-                      offset: const Offset(0, 4),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -372,30 +387,30 @@ class _HoverCardState extends State<_HoverCard> with SingleTickerProviderStateMi
                   children: [
                     // Icon
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         color: Color.lerp(
-                          widget.accent.withValues(alpha: 0.1),
-                          widget.accent.withValues(alpha: 0.2),
+                          widget.accent.withValues(alpha: 0.08),
+                          widget.accent.withValues(alpha: 0.18),
                           _elevationAnim.value,
                         ),
                       ),
                       child: Icon(
                         widget.icon,
                         color: Color.lerp(
-                          widget.accent.withValues(alpha: 0.7),
+                          widget.accent.withValues(alpha: 0.65),
                           widget.accent,
                           _elevationAnim.value,
                         ),
-                        size: 20,
+                        size: 16,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     // Label
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
                         widget.label,
                         textAlign: TextAlign.center,
@@ -403,13 +418,13 @@ class _HoverCardState extends State<_HoverCard> with SingleTickerProviderStateMi
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
                           color: Color.lerp(
-                            Colors.white.withValues(alpha: 0.6),
+                            Colors.white.withValues(alpha: 0.55),
                             Colors.white.withValues(alpha: 0.95),
                             _elevationAnim.value,
                           ),
-                          fontSize: 11,
+                          fontSize: 9.5,
                           fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
-                          height: 1.3,
+                          height: 1.2,
                         ),
                       ),
                     ),
@@ -421,12 +436,12 @@ class _HoverCardState extends State<_HoverCard> with SingleTickerProviderStateMi
         );
       },
     ).animate().fadeIn(
-      delay: (300 + widget.index * 60).ms,
-      duration: 400.ms,
+      delay: (200 + widget.index * 50).ms,
+      duration: 350.ms,
     ).slideY(
-      begin: 0.15,
-      delay: (300 + widget.index * 60).ms,
-      duration: 400.ms,
+      begin: 0.1,
+      delay: (200 + widget.index * 50).ms,
+      duration: 350.ms,
       curve: Curves.easeOutCubic,
     );
   }

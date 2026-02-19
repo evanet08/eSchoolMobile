@@ -9,7 +9,10 @@ from django.forms import model_to_dict
 from django.http import JsonResponse
 from django.contrib.auth.hashers import make_password,check_password
 from django.db.models import Q
-from .models import Annee, Eleve, Personnel, Parent, ParentOperation
+from .models import (Annee, Eleve, Personnel, Parent, ParentOperation, 
+    EleveInscription, EleveNote, Evaluation, CoursParClasse, Cours,
+    ClasseActive, Classes, Periode, Trimestre, Session, EleveNoteType,
+    ClasseDeliberation, Mention, EleveConduite)
 import random
 from monecole_ws.utils import send_whatssap_message
 import firebase_admin
@@ -370,3 +373,338 @@ def getUtilisateurs(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({"message": f"Erreur serveur: {str(e)}"}, status=500)
+
+
+# ============================================================
+# PARENT-SPECIFIC ENDPOINTS
+# ============================================================
+
+def _get_parent_from_token(request):
+    """Helper to extract parent from JWT custom claims."""
+    token = request.auth
+    user_type = token.payload.get('custom_user_type')
+    user_id = token.payload.get('custom_user_id')
+    if user_type != 'Parent' or not user_id:
+        return None
+    return Parent.objects.filter(id_parent=user_id).first()
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def getParentEnfants(request):
+    """Get all children of the authenticated parent with their class info."""
+    try:
+        parent = _get_parent_from_token(request)
+        if not parent:
+            return JsonResponse({"message": "Accès refusé"}, status=403)
+        
+        enfants = Eleve.objects.filter(id_parent=parent)
+        result = []
+        for e in enfants:
+            # Get current inscription
+            inscription = EleveInscription.objects.filter(id_eleve=e).order_by('-id_annee').first()
+            classe_info = {}
+            if inscription:
+                ca = inscription.id_classe
+                cl = Classes.objects.filter(id_classe=ca.classe_id_id).first()
+                annee = inscription.id_annee
+                classe_info = {
+                    'id_classe_active': ca.id_classe_active,
+                    'classe': cl.classe if cl else '',
+                    'groupe': ca.groupe or '',
+                    'annee': annee.annee if annee else '',
+                    'id_annee': annee.id_annee if annee else 0,
+                }
+            
+            # Count notes
+            notes_count = EleveNote.objects.filter(id_eleve=e).count()
+            
+            result.append({
+                'id_eleve': e.id_eleve,
+                'nom': e.nom,
+                'prenom': e.prenom,
+                'genre': e.genre,
+                'date_naissance': str(e.date_naissance) if e.date_naissance else '',
+                'matricule': e.matricule or '',
+                'image': e.imageurl or '',
+                'notes_count': notes_count,
+                **classe_info,
+            })
+        
+        return JsonResponse(result, safe=False, status=200)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": f"Erreur: {str(e)}"}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def getEnfantNotes(request, id_eleve):
+    """Get all notes for a specific child of the parent."""
+    try:
+        parent = _get_parent_from_token(request)
+        if not parent:
+            return JsonResponse({"message": "Accès refusé"}, status=403)
+        
+        # Verify child belongs to parent
+        eleve = Eleve.objects.filter(id_eleve=id_eleve, id_parent=parent).first()
+        if not eleve:
+            return JsonResponse({"message": "Enfant non trouvé"}, status=404)
+        
+        notes = EleveNote.objects.filter(id_eleve=eleve).select_related(
+            'id_cours_classe', 'id_cours_classe__id_cours',
+            'id_evaluation', 'id_type_note', 'id_periode',
+            'id_trimestre', 'id_session', 'id_classe_active',
+            'id_classe_active__classe_id'
+        )
+        
+        result = []
+        for n in notes:
+            result.append({
+                'id_note': n.id_note,
+                'note': float(n.note) if n.note else 0,
+                'date_saisie': str(n.date_saisie),
+                'cours': n.id_cours_classe.id_cours.cours if n.id_cours_classe else '',
+                'id_cours': n.id_cours_classe.id_cours.id_cours if n.id_cours_classe else 0,
+                'evaluation': n.id_evaluation.title if n.id_evaluation else '',
+                'ponderation': n.id_evaluation.ponderer_eval if n.id_evaluation else 0,
+                'type_note': n.id_type_note.type if n.id_type_note else '',
+                'type_note_sigle': n.id_type_note.sigle if n.id_type_note else '',
+                'periode': n.id_periode.periode if n.id_periode else '',
+                'id_periode': n.id_periode.id_periode if n.id_periode else 0,
+                'trimestre': n.id_trimestre.trimestre if n.id_trimestre else '',
+                'id_trimestre': n.id_trimestre.id_trimestre if n.id_trimestre else 0,
+                'session': n.id_session.session if n.id_session else '',
+                'classe': n.id_classe_active.classe_id.classe if n.id_classe_active else '',
+            })
+        
+        return JsonResponse(result, safe=False, status=200)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": f"Erreur: {str(e)}"}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def getEnfantEvaluations(request, id_eleve):
+    """Get all evaluations for a specific child's class."""
+    try:
+        parent = _get_parent_from_token(request)
+        if not parent:
+            return JsonResponse({"message": "Accès refusé"}, status=403)
+        
+        eleve = Eleve.objects.filter(id_eleve=id_eleve, id_parent=parent).first()
+        if not eleve:
+            return JsonResponse({"message": "Enfant non trouvé"}, status=404)
+        
+        inscription = EleveInscription.objects.filter(id_eleve=eleve).order_by('-id_annee').first()
+        if not inscription:
+            return JsonResponse([], safe=False, status=200)
+        
+        evaluations = Evaluation.objects.filter(
+            id_classe_active=inscription.id_classe,
+            id_annee=inscription.id_annee
+        ).select_related(
+            'id_cours_classe', 'id_cours_classe__id_cours',
+            'id_type_note', 'id_periode', 'id_trimestre', 'id_session',
+            'id_classe_active', 'id_classe_active__classe_id'
+        ).order_by('id_cours_classe__id_cours__cours', 'id_periode', 'date_eval')
+        
+        result = []
+        for ev in evaluations:
+            # Get the note for this student on this evaluation
+            note = EleveNote.objects.filter(id_evaluation=ev, id_eleve=eleve).first()
+            result.append({
+                'id_evaluation': ev.id_evaluation,
+                'title': ev.title,
+                'ponderation': ev.ponderer_eval,
+                'date_eval': str(ev.date_eval),
+                'cours': ev.id_cours_classe.id_cours.cours if ev.id_cours_classe else '',
+                'id_cours': ev.id_cours_classe.id_cours.id_cours if ev.id_cours_classe else 0,
+                'type_evaluation': ev.id_type_note.type if ev.id_type_note else '',
+                'type_sigle': ev.id_type_note.sigle if ev.id_type_note else '',
+                'periode': ev.id_periode.periode if ev.id_periode else '',
+                'trimestre': ev.id_trimestre.trimestre if ev.id_trimestre else '',
+                'session': ev.id_session.session if ev.id_session else '',
+                'classe': ev.id_classe_active.classe_id.classe if ev.id_classe_active else '',
+                'note': float(note.note) if note and note.note else None,
+                'id_note': note.id_note if note else None,
+            })
+        
+        return JsonResponse(result, safe=False, status=200)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": f"Erreur: {str(e)}"}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def getEnfantCours(request, id_eleve):
+    """Get all courses for a specific child."""
+    try:
+        parent = _get_parent_from_token(request)
+        if not parent:
+            return JsonResponse({"message": "Accès refusé"}, status=403)
+        
+        eleve = Eleve.objects.filter(id_eleve=id_eleve, id_parent=parent).first()
+        if not eleve:
+            return JsonResponse({"message": "Enfant non trouvé"}, status=404)
+        
+        inscription = EleveInscription.objects.filter(id_eleve=eleve).order_by('-id_annee').first()
+        if not inscription:
+            return JsonResponse([], safe=False, status=200)
+        
+        cours_par_classe = CoursParClasse.objects.filter(
+            id_classe=inscription.id_classe,
+            id_annee=inscription.id_annee
+        ).select_related('id_cours')
+        
+        result = []
+        for cpc in cours_par_classe:
+            result.append({
+                'id_cours_classe': cpc.id_cours_classe,
+                'id_cours': cpc.id_cours.id_cours,
+                'cours': cpc.id_cours.cours,
+                'ponderation': cpc.ponderation or 0,
+            })
+        
+        return JsonResponse(result, safe=False, status=200)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": f"Erreur: {str(e)}"}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def getEnfantBulletin(request, id_eleve):
+    """Get a comprehensive bulletin for a specific child."""
+    try:
+        parent = _get_parent_from_token(request)
+        if not parent:
+            return JsonResponse({"message": "Accès refusé"}, status=403)
+        
+        eleve = Eleve.objects.filter(id_eleve=id_eleve, id_parent=parent).first()
+        if not eleve:
+            return JsonResponse({"message": "Enfant non trouvé"}, status=404)
+        
+        inscription = EleveInscription.objects.filter(id_eleve=eleve).order_by('-id_annee').first()
+        if not inscription:
+            return JsonResponse({"message": "Pas d'inscription trouvée"}, status=404)
+        
+        ca = inscription.id_classe
+        cl = Classes.objects.get(id_classe=ca.classe_id_id)
+        annee = inscription.id_annee
+        
+        # Get all courses for this class
+        cours_par_classe = CoursParClasse.objects.filter(
+            id_classe=ca, id_annee=annee
+        ).select_related('id_cours')
+        
+        # Get all notes for this student
+        all_notes = EleveNote.objects.filter(
+            id_eleve=eleve, id_annee=annee
+        ).select_related(
+            'id_cours_classe', 'id_cours_classe__id_cours',
+            'id_evaluation', 'id_type_note', 'id_periode', 'id_trimestre'
+        )
+        
+        # Build per-course summary
+        cours_summary = []
+        total_avg = 0
+        total_count = 0
+        
+        for cpc in cours_par_classe:
+            course_notes = all_notes.filter(id_cours_classe=cpc)
+            
+            # Group by period
+            periods = {}
+            for n in course_notes:
+                p_name = n.id_periode.periode if n.id_periode else 'N/A'
+                if p_name not in periods:
+                    periods[p_name] = {'notes': [], 'total': 0, 'count': 0}
+                if n.note is not None:
+                    pct = (float(n.note) / n.id_evaluation.ponderer_eval * 100) if n.id_evaluation and n.id_evaluation.ponderer_eval > 0 else 0
+                    periods[p_name]['notes'].append({
+                        'note': float(n.note),
+                        'ponderation': n.id_evaluation.ponderer_eval if n.id_evaluation else 0,
+                        'type': n.id_type_note.sigle if n.id_type_note else '',
+                        'pourcentage': round(pct, 1),
+                    })
+                    periods[p_name]['total'] += pct
+                    periods[p_name]['count'] += 1
+            
+            # Calculate averages
+            period_summaries = []
+            course_total_pct = 0
+            course_note_count = 0
+            for p_name, p_data in periods.items():
+                avg = round(p_data['total'] / p_data['count'], 1) if p_data['count'] > 0 else 0
+                period_summaries.append({
+                    'periode': p_name,
+                    'moyenne': avg,
+                    'notes_count': p_data['count'],
+                    'notes': p_data['notes'],
+                })
+                course_total_pct += p_data['total']
+                course_note_count += p_data['count']
+            
+            course_avg = round(course_total_pct / course_note_count, 1) if course_note_count > 0 else 0
+            
+            cours_summary.append({
+                'cours': cpc.id_cours.cours,
+                'id_cours': cpc.id_cours.id_cours,
+                'ponderation': cpc.ponderation or 0,
+                'moyenne_generale': course_avg,
+                'periodes': period_summaries,
+                'total_notes': course_note_count,
+            })
+            
+            if course_note_count > 0:
+                total_avg += course_avg
+                total_count += 1
+        
+        overall_avg = round(total_avg / total_count, 1) if total_count > 0 else 0
+        
+        # Get mention
+        mention_text = ''
+        mention_obj = Mention.objects.filter(min__lte=overall_avg, max__gte=overall_avg).first()
+        if mention_obj:
+            mention_text = mention_obj.mention
+        
+        # Check deliberation
+        delib = ClasseDeliberation.objects.filter(id_classe=ca, id_annee=annee).first()
+        
+        bulletin = {
+            'eleve': {
+                'id': eleve.id_eleve,
+                'nom': eleve.nom,
+                'prenom': eleve.prenom,
+                'genre': eleve.genre,
+                'date_naissance': str(eleve.date_naissance) if eleve.date_naissance else '',
+                'matricule': eleve.matricule or '',
+            },
+            'classe': cl.classe,
+            'annee': annee.annee,
+            'groupe': ca.groupe or '',
+            'moyenne_generale': overall_avg,
+            'mention': mention_text,
+            'deliberation': {
+                'existe': delib is not None,
+                'date': str(delib.date_deliberation) if delib else '',
+                'resultats_visibles': bool(delib.showresults) if delib else False,
+            },
+            'cours': cours_summary,
+            'total_cours': len(cours_summary),
+            'total_notes': all_notes.count(),
+        }
+        
+        return JsonResponse(bulletin, safe=False, status=200)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": f"Erreur: {str(e)}"}, status=500)
+

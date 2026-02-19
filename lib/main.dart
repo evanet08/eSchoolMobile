@@ -20,6 +20,7 @@ import 'package:eschoolmobile/pages/principal_page.dart';
 import 'package:eschoolmobile/pages/success_page.dart';
 import 'package:eschoolmobile/pages/user_selection_page.dart';
 import 'package:eschoolmobile/pages/activity_dashboard_page.dart';
+import 'package:eschoolmobile/pages/parent_enfants_page.dart';
 import 'package:eschoolmobile/providers/authentication_provider.dart';
 import 'package:eschoolmobile/providers/classes_provider.dart';
 import 'package:eschoolmobile/providers/cours_provider.dart';
@@ -103,6 +104,7 @@ class _MyAppState extends State<MyApp> {
         'dashboard_teacher': (context) => const ActivityDashboardPage(userType: 'Teacher'),
         'dashboard_parent': (context) => const ActivityDashboardPage(userType: 'Parent'),
         'dashboard_admin': (context) => const ActivityDashboardPage(userType: 'Administrative'),
+        'parent_enfants': (context) => const ParentEnfantsPage(),
       },
       localizationsDelegates: const [
         AppLocalizations.delegate,

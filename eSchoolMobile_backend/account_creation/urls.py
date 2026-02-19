@@ -10,4 +10,10 @@ urlpatterns = [
     path('admin_postes', views.getPostesAdministratifs, name='admin_postes'),
     path('parent_operations', views.getParentOperations, name='parent_operations'),
     path('utilisateurs', views.getUtilisateurs, name='utilisateurs'),
+    # Parent-specific endpoints
+    path('parent/enfants', views.getParentEnfants, name='parent_enfants'),
+    path('parent/enfant/<int:id_eleve>/notes', views.getEnfantNotes, name='enfant_notes'),
+    path('parent/enfant/<int:id_eleve>/evaluations', views.getEnfantEvaluations, name='enfant_evaluations'),
+    path('parent/enfant/<int:id_eleve>/cours', views.getEnfantCours, name='enfant_cours'),
+    path('parent/enfant/<int:id_eleve>/bulletin', views.getEnfantBulletin, name='enfant_bulletin'),
 ]
